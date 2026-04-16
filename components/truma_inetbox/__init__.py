@@ -235,8 +235,7 @@ async def to_code(config):
         # Default Stack Size is 2048. Not enough for my operation.
         cg.add_build_flag("-DARDUINO_SERIAL_EVENT_TASK_STACK_SIZE=4096")
         # Request UART event queue for low-latency RX processing
-        uart.request_wake_loop_on_rx()
-
+        
     var = cg.new_Pvariable(config[CONF_ID])
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
