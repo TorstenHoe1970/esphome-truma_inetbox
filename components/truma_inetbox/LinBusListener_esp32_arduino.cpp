@@ -64,11 +64,13 @@ void LinBusListener::uartEventTask_(void *args) {
   auto uartComp = static_cast<ESPHOME_UART *>(instance->parent_);
   auto uart_num = uartComp->get_hw_serial_number();
   
-  // Notfall-Bypass für ESPHome 2026
+  // Finaler Fix für 2026: Wir fragen die Daten aktiv ab
   for (;;) {
-    vTaskDelay(pdMS_TO_TICKS(100)); 
-    // Wir lassen den ESP hier einfach kurz atmen,
-    // damit der Compiler die fehlende UART-Warteschlange ignoriert.
+    if (instance->available() > 0) {
+       instance->onReceive_();
+    }
+    // 10ms Pause ist perfekt für den LIN-Bus
+    vTaskDelay(pdMS_TO_TICKS(10)); 
   }
   vTaskDelete(NULL);
 }
