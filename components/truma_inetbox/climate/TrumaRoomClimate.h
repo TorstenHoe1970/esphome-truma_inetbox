@@ -6,9 +6,13 @@
 #include "esphome/components/truma_inetbox/TrumaiNetBoxApp.h"
 
 namespace esphome {
-  namespace truma_inetbox {
-  
-  class TrumaRoomClimate : public Component, public climate::Climate, public Parented<TrumaiNetBoxApp> {
+namespace truma_inetbox {
+
+class TrumaRoomClimate; // Wir sagen: "Achtung, dieses Ding kommt gleich!"
+using TrumaClimate = TrumaRoomClimate; // Jetzt darfst du den Spitznamen benutzen.
+
+class TrumaRoomClimate : public Component, public climate::Climate, public Parented<TrumaiNetBoxApp> {
+  // ... hier geht dein restlicher Code weiter
    public:
     void loop() override {}
     void dump_config() override;
