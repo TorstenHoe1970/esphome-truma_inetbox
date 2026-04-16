@@ -63,7 +63,7 @@ void LinBusListener::uartEventTask_(void *args) {
   LinBusListener *instance = (LinBusListener *) args;
   auto uartComp = static_cast<ESPHOME_UART *>(instance->parent_);
   auto uart_num = uartComp->get_hw_serial_number();
-  auto uartEventQueue = uartComp->get_uart_event_queue();
+  QueueHandle_t uartEventQueue = nullptr; // Notfall-Fix 2026
   uart_event_t event;
   for (;;) {
     // Waiting for UART event.
