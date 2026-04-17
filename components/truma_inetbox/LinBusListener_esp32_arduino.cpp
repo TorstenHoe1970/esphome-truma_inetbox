@@ -70,7 +70,7 @@ void LinBusListener::uartEventTask_(void *args) {
        instance->onReceive_();
     }
     // Kurze Pause, damit der ESP32 nicht heißläuft
-    vTaskDelay(pdMS_TO_TICKS(10)); 
+    vTaskDelay(pdMS_TO_TICKS(1)); 
   }
   vTaskDelete(NULL);
 }
