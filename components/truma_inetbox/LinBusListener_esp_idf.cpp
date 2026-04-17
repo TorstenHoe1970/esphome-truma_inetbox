@@ -65,26 +65,15 @@ void LinBusListener::setup_framework() {
 
 void LinBusListener::uartEventTask_(void *args) {
   LinBusListener *instance = (LinBusListener *) args;
-  auto uartComp = static_cast<ESPHOME_UART *>(instance->parent_);
-  auto uart_num = uartComp->get_hw_serial_number();
-  QueueHandle_t uartEventQueue = nullptr; // Notfall-Fix 2026
-  uart_event_t event;
   for (;;) {
-    // Waiting for UART event.
-    if (xQueueReceive(*uartEventQueue, (void *) &event, QUEUE_WAIT_BLOCKING)) {
-      if (event.type == UART_DATA && instance->available() > 0) {
-        instance->onReceive_();
-      } else if (event.type == UART_BREAK) {
-        // If the break is valid the `onReceive` is called first and the break is handeld. Therfore the expectation is
-        // that the state should be in waiting for `SYNC`.
-        if (instance->current_state_ != READ_STATE_SYNC) {
-          instance->current_state_ = READ_STATE_BREAK;
-        }
-      }
+    if (instance->available() > 0) {
+      instance->onReceive_();
     }
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
   vTaskDelete(NULL);
 }
+  
 
 void LinBusListener::eventTask_(void *args) {
   LinBusListener *instance = (LinBusListener *) args;
