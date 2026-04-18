@@ -70,7 +70,10 @@ void LinBusListener::setup() {
   }
 }
 
-void LinBusListener::update() { this->check_for_lin_fault_(); }
+void LinBusListener::update() {
+  this->check_for_lin_fault_();
+  this->check_lin_watchdog();
+}
 
 void LinBusListener::write_lin_answer_(const uint8_t *data, uint8_t len) {
   QUEUE_LOG_MSG log_msg = QUEUE_LOG_MSG();
@@ -410,6 +413,26 @@ void LinBusListener::process_log_queue(TickType_t xTicksToWait) {
 #undef DIAGNOSTIC_FRAME_MASTER
 #undef DIAGNOSTIC_FRAME_SLAVE
 #undef QUEUE_WAIT_DONT_BLOCK
+
+void LinBusListener::check_lin_watchdog() {
+  uint32_t now = millis();
+  // Track activity based on last received LIN data (in microseconds, converted)
+  if (this->last_data_recieved_ > 0) {
+    uint32_t last_ms = this->last_data_recieved_ / 1000;
+    if ((now - last_ms) < LIN_WATCHDOG_TIMEOUT_MS) {
+      // Bus is active – update activity timestamp
+      this->last_lin_activity_ = now;
+      return;
+    }
+    // Bus has been silent longer than timeout
+    if ((now - this->last_lin_activity_) > LIN_WATCHDOG_TIMEOUT_MS) {
+      ESP_LOGW(TAG, "LIN Bus watchdog: no activity for %d ms, resetting state machine", LIN_WATCHDOG_TIMEOUT_MS);
+      this->last_lin_activity_ = now;
+      this->clear_uart_buffer_();
+      this->current_state_reset_();
+    }
+  }
+}
 
 }  // namespace truma_inetbox
 }  // namespace esphome
