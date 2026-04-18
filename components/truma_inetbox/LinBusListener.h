@@ -49,6 +49,13 @@ class LinBusListener : public PollingComponent, public uart::UARTDevice {
 
   void process_lin_msg_queue(TickType_t xTicksToWait);
   void process_log_queue(TickType_t xTicksToWait);
+  void check_lin_watchdog();
+
+  // Public wrapper so uartEventTask_ (static) can reset state after bus silence
+  void reset_lin_state() {
+    this->clear_uart_buffer_();
+    this->current_state_reset_();
+  }
 
 #ifdef USE_RP2040
   // Return is the expected wait time till next data check is recommended.
@@ -101,6 +108,10 @@ class LinBusListener : public PollingComponent, public uart::UARTDevice {
   uint8_t current_data_[9] = {};
   // // Time when the last LIN data was available.
   uint32_t last_data_recieved_ = 0;
+  // Time when the last LIN activity was seen (for watchdog), in millis().
+  uint32_t last_lin_activity_ = 0;
+  // Watchdog timeout: if LIN bus is silent longer than this, reset state machine.
+  static const uint32_t LIN_WATCHDOG_TIMEOUT_MS = 5000;
 
   void current_state_reset_() {
     this->current_state_ = READ_STATE_BREAK;
