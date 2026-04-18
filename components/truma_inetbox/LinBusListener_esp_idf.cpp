@@ -65,9 +65,22 @@ void LinBusListener::setup_framework() {
 
 void LinBusListener::uartEventTask_(void *args) {
   LinBusListener *instance = (LinBusListener *) args;
+  TickType_t last_activity_tick = xTaskGetTickCount();
+
   for (;;) {
     if (instance->available() > 0) {
       instance->onReceive_();
+      last_activity_tick = xTaskGetTickCount();
+    } else {
+      // If LIN bus has been silent for > 3 seconds, reset the state machine.
+      // This allows HA commands to be accepted again after both entities were OFF.
+      TickType_t now = xTaskGetTickCount();
+      if ((now - last_activity_tick) > pdMS_TO_TICKS(3000)) {
+        instance->reset_lin_state();
+        last_activity_tick = now;
+        ESP_LOGW("truma_inetbox.LinBusListener",
+                 "LIN Bus silent for 3s – state machine reset");
+      }
     }
     vTaskDelay(pdMS_TO_TICKS(1));
   }
