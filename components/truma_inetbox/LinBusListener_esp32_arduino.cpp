@@ -61,16 +61,24 @@ void LinBusListener::setup_framework() {
 
 void LinBusListener::uartEventTask_(void *args) {
   LinBusListener *instance = (LinBusListener *) args;
-  auto uartComp = static_cast<ESPHOME_UART *>(instance->parent_);
-  auto uart_num = uartComp->get_hw_serial_number();
-  
-  // Finaler Fix für 2026: Wir schauen alle 10ms nach Daten
+  TickType_t last_activity_tick = xTaskGetTickCount();
+
   for (;;) {
     if (instance->available() > 0) {
-       instance->onReceive_();
+      instance->onReceive_();
+      last_activity_tick = xTaskGetTickCount();
+    } else {
+      // If LIN bus has been silent for > 3 seconds, reset the state machine.
+      // This allows HA commands to be accepted again after both entities were OFF.
+      TickType_t now = xTaskGetTickCount();
+      if ((now - last_activity_tick) > pdMS_TO_TICKS(3000)) {
+        instance->reset_lin_state();
+        last_activity_tick = now;
+        ESP_LOGW("truma_inetbox.LinBusListener",
+                 "LIN Bus silent for 3s – state machine reset");
+      }
     }
-    // Kurze Pause, damit der ESP32 nicht heißläuft
-    vTaskDelay(pdMS_TO_TICKS(1)); 
+    vTaskDelay(pdMS_TO_TICKS(1));
   }
   vTaskDelete(NULL);
 }
